@@ -9,6 +9,13 @@
       muted
     ></video>
     
+    <!-- Visual Debugger (Only for dev/testing) -->
+    <div class="absolute bottom-4 left-0 w-full z-50 px-8 pointer-events-none">
+      <div class="bg-black/60 backdrop-blur-md text-[10px] text-white/60 p-2 rounded-xl text-center font-mono">
+        {{ debugLog }}
+      </div>
+    </div>
+
     <!-- Scanner Overlay (Target Frame) -->
     <div class="z-10 pointer-events-none relative w-full h-full flex flex-col items-center justify-center p-4">
       
@@ -259,25 +266,33 @@ const startProcessingLoop = () => {
   animationFrameId = requestAnimationFrame(loop)
 }
 
+const isCheckingBrand = ref(false)
+const debugLog = ref('Sistem hazır. Tarama bekleniyor...')
+
 const checkBrandStatus = async (scanResult) => {
+  if (isCheckingBrand.value) return
+  
   const { text, barcode } = scanResult
   if (!text && !barcode) return
 
+  isCheckingBrand.value = true
+  debugLog.value = barcode ? `Barkod sorgulanıyor: ${barcode}` : 'Metin analiz ediliyor...'
+
   let brandToMatch = ''
 
-  // 1. ADIM: Barkod varsa Dünyanın en büyük veritabanına sor (Open Food Facts)
   if (barcode) {
     try {
-      console.log('🌐 Barkod sorgulanıyor:', barcode)
       const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`)
       const data = await res.json()
       
       if (data.status === 1 && data.product.brands) {
         brandToMatch = data.product.brands.split(',')[0].toLowerCase()
-        console.log('📦 Ürün Markası Bulundu:', brandToMatch)
+        debugLog.value = `Marka bulundu: ${brandToMatch}`
+      } else {
+        debugLog.value = 'Barkod veritabanında bulunamadı.'
       }
     } catch (err) {
-      console.error('API Sorgu Hatası:', err)
+      debugLog.value = 'Bağlantı hatası (API).'
     }
   }
 
@@ -306,7 +321,11 @@ const checkBrandStatus = async (scanResult) => {
     }
     
     triggerVibration(match.status)
+  } else if (brandToMatch || text) {
+    debugLog.value = `Marka boykot listesinde değil: ${brandToMatch || text}`
   }
+
+  isCheckingBrand.value = false
 }
 
 const triggerVibration = (status) => {
