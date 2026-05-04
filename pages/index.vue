@@ -21,73 +21,95 @@
     <div class="z-10 pointer-events-none relative w-full h-full flex flex-col items-center justify-center p-4">
       
       <!-- Top Instruction -->
-      <div class="absolute top-12 left-1/2 -translate-x-1/2 text-white text-base md:text-lg font-medium bg-black/60 px-6 py-3 rounded-full shadow-[0_4px_30px_rgba(0,0,0,0.1)] backdrop-blur-md border border-white/10 whitespace-nowrap">
-        Ürünü Çerçeveye Yerleştirin
+      <div class="absolute top-12 left-1/2 -translate-x-1/2 text-white text-base md:text-lg font-bold bg-white/10 px-8 py-4 rounded-3xl shadow-[0_8px_32px_0_rgba(31,38,135,0.37)] backdrop-blur-lg border border-white/20 whitespace-nowrap tracking-wide uppercase flex items-center gap-3">
+        <UIcon name="i-heroicons-magnifying-glass" class="w-5 h-5 text-green-400" />
+        Akıllı Analiz Aktif
       </div>
       
       <!-- Frame -->
-      <div class="w-72 h-72 border-4 border-white/40 rounded-[2rem] relative shadow-2xl">
+      <div class="w-80 h-80 border-2 border-white/20 rounded-[3rem] relative shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden bg-white/5 backdrop-blur-[2px]">
         <!-- Scanning animation line -->
-        <div class="absolute top-0 left-0 w-full h-1 bg-green-400 opacity-80 scan-line shadow-[0_0_15px_#4ade80]"></div>
+        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-green-400 to-transparent opacity-100 scan-line shadow-[0_0_20px_#4ade80]"></div>
+        
+        <!-- Center Crosshair -->
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 border border-white/30 rounded-full"></div>
         
         <!-- Corner decorations -->
-        <div class="absolute -top-1 -left-1 w-8 h-8 border-t-4 border-l-4 border-white rounded-tl-[2rem]"></div>
-        <div class="absolute -top-1 -right-1 w-8 h-8 border-t-4 border-r-4 border-white rounded-tr-[2rem]"></div>
-        <div class="absolute -bottom-1 -left-1 w-8 h-8 border-b-4 border-l-4 border-white rounded-bl-[2rem]"></div>
-        <div class="absolute -bottom-1 -right-1 w-8 h-8 border-b-4 border-r-4 border-white rounded-br-[2rem]"></div>
+        <div class="absolute top-6 left-6 w-12 h-12 border-t-4 border-l-4 border-green-400 rounded-tl-2xl"></div>
+        <div class="absolute top-6 right-6 w-12 h-12 border-t-4 border-r-4 border-green-400 rounded-tr-2xl"></div>
+        <div class="absolute bottom-6 left-6 w-12 h-12 border-b-4 border-l-4 border-green-400 rounded-bl-2xl"></div>
+        <div class="absolute bottom-6 right-6 w-12 h-12 border-b-4 border-r-4 border-green-400 rounded-br-2xl"></div>
       </div>
       
-      <!-- Bottom Process Indicator -->
-      <div v-if="isProcessing" class="absolute bottom-24 flex items-center gap-2 text-white/80 bg-black/50 px-4 py-2 rounded-full backdrop-blur-sm text-sm">
-        <UIcon name="i-heroicons-arrow-path" class="w-4 h-4 animate-spin" />
-        Analiz ediliyor...
+      <!-- Bottom Status -->
+      <div class="absolute bottom-28 flex flex-col items-center gap-3">
+        <div v-if="isProcessing" class="flex items-center gap-3 text-white bg-green-500/20 px-6 py-2 rounded-full border border-green-500/30 backdrop-blur-md text-xs font-bold uppercase tracking-widest animate-pulse">
+          <div class="w-2 h-2 bg-green-400 rounded-full"></div>
+          Görüntü İşleniyor
+        </div>
       </div>
     </div>
 
     <!-- Error State -->
-    <div v-if="errorMsg" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20 bg-red-600/90 backdrop-blur-xl text-white p-8 rounded-3xl shadow-2xl w-11/12 max-w-sm text-center border border-red-500/50">
-      <UIcon name="i-heroicons-exclamation-triangle" class="w-16 h-16 mx-auto mb-4 text-red-200" />
-      <h3 class="font-bold text-2xl mb-3">Kamera Hatası</h3>
-      <p class="text-base text-red-100">{{ errorMsg }}</p>
-      <UButton color="white" variant="solid" size="lg" class="mt-6 font-bold" @click="initCamera">Tekrar Dene</UButton>
+    <div v-if="errorMsg" class="absolute inset-0 z-50 flex items-center justify-center bg-gray-950/90 backdrop-blur-2xl p-4">
+      <div class="bg-white rounded-[3rem] shadow-2xl w-full max-w-sm p-10 text-center border border-red-50/50">
+        <div class="w-24 h-24 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-8 shadow-inner">
+          <UIcon name="i-heroicons-video-camera-slash" class="w-12 h-12 text-red-500" />
+        </div>
+        <h3 class="font-black text-3xl text-gray-900 mb-6 tracking-tight">Kamera İzni</h3>
+        <p class="text-gray-500 text-lg leading-relaxed mb-8">Ürünleri analiz edebilmem için kamera erişimine ihtiyacım var.</p>
+        <UButton color="black" variant="solid" size="xl" class="font-black rounded-2xl w-full justify-center py-4 text-lg shadow-xl" @click="initCamera">
+          İzin Ver
+        </UButton>
+      </div>
     </div>
 
     <!-- Result Card -->
     <Transition name="slide-up">
-      <div v-if="detectedBrand" class="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-30 w-11/12 max-w-md bg-white rounded-[2rem] shadow-2xl p-6 transition-all border-t-[10px]" :class="detectedBrand.status === 'boykot' ? 'border-red-500' : 'border-green-500'">
+      <div v-if="detectedBrand" class="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-30 w-[92%] max-w-md bg-white/95 backdrop-blur-2xl rounded-[3rem] shadow-[0_20px_50px_rgba(0,0,0,0.3)] p-8 transition-all border border-white/20 overflow-hidden">
         
-        <div class="flex items-start justify-between">
-          <div>
+        <!-- Brand Header Section -->
+        <div class="flex items-start justify-between mb-6">
+          <div class="flex-1">
             <div class="flex items-center gap-3 mb-2">
-              <span class="inline-flex items-center justify-center w-10 h-10 rounded-full shadow-inner" :class="detectedBrand.status === 'boykot' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'">
-                <UIcon :name="detectedBrand.status === 'boykot' ? 'i-heroicons-x-mark' : 'i-heroicons-check'" class="w-6 h-6" />
-              </span>
-              <h2 class="text-3xl font-extrabold text-gray-900 tracking-tight">{{ detectedBrand.name }}</h2>
+              <div class="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg transform rotate-3" :class="detectedBrand.status === 'boykot' ? 'bg-red-500 text-white' : 'bg-green-500 text-white'">
+                <UIcon :name="detectedBrand.status === 'boykot' ? 'i-heroicons-exclamation-circle' : 'i-heroicons-check-badge'" class="w-8 h-8" />
+              </div>
+              <div>
+                <h2 class="text-3xl font-black text-gray-900 leading-none tracking-tighter">{{ detectedBrand.name }}</h2>
+                <span class="text-[10px] font-black tracking-[0.2em] uppercase opacity-40">Analiz Sonucu</span>
+              </div>
             </div>
-            <p class="text-sm font-bold tracking-widest uppercase" :class="detectedBrand.status === 'boykot' ? 'text-red-500' : 'text-green-500'">
-              {{ detectedBrand.status === 'boykot' ? 'BOYKOTLU ÜRÜN' : 'GÜVENLİ ÜRÜN' }}
-            </p>
           </div>
-          <UButton color="gray" variant="ghost" icon="i-heroicons-x-mark" class="rounded-full" @click="clearResult" />
+          <UButton color="gray" variant="soft" icon="i-heroicons-x-mark" class="rounded-full w-10 h-10 flex items-center justify-center shadow-sm" @click="clearResult" />
         </div>
 
-        <p v-if="detectedBrand.reason" class="mt-3 text-sm text-gray-600 leading-relaxed font-medium">
-          {{ detectedBrand.reason }}
+        <!-- Status Pill -->
+        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-black tracking-widest uppercase mb-6 shadow-sm border" :class="detectedBrand.status === 'boykot' ? 'bg-red-50 text-red-600 border-red-100' : 'bg-green-50 text-green-600 border-green-100'">
+          <div class="w-2 h-2 rounded-full animate-pulse" :class="detectedBrand.status === 'boykot' ? 'bg-red-500' : 'bg-green-500'"></div>
+          {{ detectedBrand.status === 'boykot' ? 'Boykot Kapsamında' : 'Güvenilir Marka' }}
+        </div>
+
+        <p v-if="detectedBrand.reason" class="text-sm text-gray-500 leading-relaxed font-medium mb-8 italic">
+          "{{ detectedBrand.reason }}"
         </p>
 
-        <!-- Alternative Suggestion Card (If boycotted) -->
-        <div v-if="detectedBrand.status === 'boykot' && detectedBrand.displayAlternatives?.length" class="mt-5 bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-5 border border-gray-200 shadow-sm">
-          <div class="flex items-center gap-2 mb-3">
-            <UIcon name="i-heroicons-sparkles" class="w-5 h-5 text-amber-500" />
-            <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider">Önerilen Alternatifler</h4>
+        <!-- Premium Alternative Selection -->
+        <div v-if="detectedBrand.status === 'boykot' && detectedBrand.displayAlternatives?.length" class="space-y-4">
+          <div class="flex items-center justify-between px-1">
+            <h4 class="text-xs font-black text-gray-400 uppercase tracking-widest">Size Özel Alternatifler</h4>
+            <UIcon name="i-heroicons-sparkles" class="w-4 h-4 text-amber-400" />
           </div>
           
-          <div class="flex flex-col gap-3">
-            <div v-for="alt in detectedBrand.displayAlternatives" :key="alt.name" class="flex items-center justify-between bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
-              <span class="font-bold text-lg text-gray-800">{{ alt.name }}</span>
-              <UButton size="sm" color="primary" variant="soft" icon="i-heroicons-shopping-bag" class="font-bold">
-                İncele
-              </UButton>
+          <div class="grid grid-cols-1 gap-3">
+            <div v-for="alt in detectedBrand.displayAlternatives" :key="alt.name" class="group flex items-center justify-between bg-gray-50 hover:bg-black hover:text-white p-4 rounded-[1.5rem] border border-gray-100 transition-all duration-300 cursor-pointer shadow-sm hover:shadow-xl">
+              <div class="flex items-center gap-4">
+                <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm group-hover:bg-white/10">
+                  <UIcon name="i-heroicons-shopping-cart" class="w-5 h-5 text-gray-400 group-hover:text-white" />
+                </div>
+                <span class="font-bold text-lg tracking-tight">{{ alt.name }}</span>
+              </div>
+              <UIcon name="i-heroicons-chevron-right" class="w-5 h-5 opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
           </div>
         </div>
@@ -97,7 +119,6 @@
 </template>
 
 <script setup>
-// Nuxt 3 auto-imports ref, onMounted, onBeforeUnmount and useScanner
 const videoElement = ref(null)
 const errorMsg = ref('')
 const detectedBrand = ref(null)
@@ -110,18 +131,14 @@ const { initScanner, processFrame, isReady: isScannerReady, isProcessing } = use
 const { detectedMarketId } = useMarketContext()
 
 onMounted(async () => {
-  // Canlı API üzerinden verileri çek (GitHub tabanlı)
   try {
     const res = await fetch('/api/brands')
     brands.value = await res.json()
   } catch (err) {
-    console.error('Canlı veri çekilemedi, lütfen internet bağlantınızı kontrol edin.', err)
+    console.error('Veri çekilemedi.', err)
   }
 
-  // Modelleri yükle
   await initScanner()
-  
-  // Kamerayı başlat
   await initCamera()
 })
 
@@ -129,7 +146,7 @@ const initCamera = async () => {
   errorMsg.value = ''
   try {
     stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'environment' }
+      video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
     })
     if (videoElement.value) {
       videoElement.value.srcObject = stream
@@ -139,18 +156,16 @@ const initCamera = async () => {
       }
     }
   } catch (err) {
-    errorMsg.value = 'Kamera erişimine izin vermeniz gerekiyor veya cihazınızda uygun kamera bulunamadı.'
+    errorMsg.value = 'Kamera erişimi engellendi.'
     console.error('Camera error:', err)
   }
 }
 
-// Processing Throttle (Saniyede ~2 kez)
 let lastProcessTime = 0
 const PROCESS_INTERVAL = 500 
 
 const startProcessingLoop = () => {
   const loop = async (timestamp) => {
-    // Sadece modeller hazırsa, şu an başka işlem yapılmıyorsa, sonuç ekranda yoksa ve interval dolduysa çalış
     if (
       isScannerReady.value && 
       !detectedBrand.value && 
@@ -159,9 +174,9 @@ const startProcessingLoop = () => {
       lastProcessTime = timestamp
       
       if (videoElement.value) {
-        const textResult = await processFrame(videoElement.value)
-        if (textResult) {
-          checkBrandStatus(textResult)
+        const scanResult = await processFrame(videoElement.value)
+        if (scanResult) {
+          checkBrandStatus(scanResult)
         }
       }
     }
@@ -170,12 +185,15 @@ const startProcessingLoop = () => {
   animationFrameId = requestAnimationFrame(loop)
 }
 
-const checkBrandStatus = (scannedText) => {
-  // JSON içindeki markalarla eşleşme ara
-  const match = brands.value.find(b => scannedText.includes(b.name.toLowerCase()))
+const checkBrandStatus = (scanResult) => {
+  const { text, barcode } = scanResult
+  
+  const match = brands.value.find(b => 
+    text.includes(b.name.toLowerCase()) || 
+    (barcode && b.barcode === barcode)
+  )
   
   if (match) {
-    // Market bazlı filtreleme: Sadece şu anki markette olan alternatifleri getir
     const filteredAlternatives = match.alternatives.filter(alt => 
       alt.in.includes(detectedMarketId.value) || alt.in.includes('GENEL')
     )
@@ -192,11 +210,9 @@ const checkBrandStatus = (scannedText) => {
 const triggerVibration = (status) => {
   if ('vibrate' in navigator) {
     if (status === 'boykot') {
-      // Boykotlu üründe sert/uzun titreşim deseni
-      navigator.vibrate([300, 100, 300, 100, 300])
+      navigator.vibrate([200, 100, 200])
     } else {
-      // Güvenli üründe kısa tek titreşim
-      navigator.vibrate([150])
+      navigator.vibrate([100])
     }
   }
 }

@@ -19,19 +19,27 @@ export const useScanner = () => {
     }
   }
 
-  const processFrame = async (videoElement: HTMLVideoElement): Promise<string | null> => {
+  const processFrame = async (videoElement: HTMLVideoElement): Promise<{ text?: string, barcode?: string } | null> => {
     if (!objectDetector || isProcessing.value) return null
     isProcessing.value = true
 
     try {
-      // V0.4: TF.js Object Detection Trigger
+      // 1. Barkod Taraması (Modern tarayıcı desteği varsa)
+      let detectedBarcode = ''
+      if ('BarcodeDetector' in window) {
+        // @ts-ignore
+        const barcodeDetector = new window.BarcodeDetector({ formats: ['ean_13', 'ean_8', 'qr_code'] })
+        const barcodes = await barcodeDetector.detect(videoElement)
+        if (barcodes.length > 0) {
+          detectedBarcode = barcodes[0].rawValue
+        }
+      }
+
+      // 2. TF.js Object Detection Trigger
       const predictions = await objectDetector.detect(videoElement)
       
-      // Sadece sahnede genel bir obje varsa devam et
-      // Bu sayede düz bir duvara tutulduğunda OCR çalışıp CPU'yu yormaz
-      if (predictions.length > 0) {
-        
-        // V0.1: Tesseract OCR (tur+eng)
+      // Obje veya Barkod bulunduysa OCR çalıştır
+      if (predictions.length > 0 || detectedBarcode) {
         const canvas = document.createElement('canvas')
         canvas.width = videoElement.videoWidth
         canvas.height = videoElement.videoHeight
@@ -43,16 +51,16 @@ export const useScanner = () => {
         const { data: { text } } = await Tesseract.recognize(
           canvas,
           'tur+eng',
-          { logger: () => {} } // Logları kapalı tutuyoruz performansı artırmak için
+          { logger: () => {} }
         )
         
-        return text.trim().toLowerCase()
+        return {
+          text: text.trim().toLowerCase(),
+          barcode: detectedBarcode
+        }
       }
-
-      // V0.3 için Not: Burada Barkod (EAN-13) okuma modülü eklenebilir.
-      
     } catch (err) {
-      console.error('Frame processing failed:', err)
+      console.error('Tarama hatası:', err)
     } finally {
       isProcessing.value = false
     }
