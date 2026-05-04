@@ -1,14 +1,5 @@
-<template>
-  <div class="relative w-full h-screen bg-gray-900 overflow-hidden flex flex-col items-center justify-center font-sans">
-    
-    <!-- Loading State -->
-    <div v-if="!isScannerReady" class="absolute inset-0 z-50 flex flex-col items-center justify-center bg-gray-900 text-white backdrop-blur-md">
-      <UIcon name="i-heroicons-arrow-path" class="w-12 h-12 animate-spin text-green-400 mb-4" />
-      <h2 class="text-xl font-semibold">Modeller Yükleniyor...</h2>
-      <p class="text-sm text-gray-400 mt-2">Bu işlem ilk seferde biraz zaman alabilir.</p>
-    </div>
-
-    <!-- Video Element -->
+  <div class="fixed inset-0 bg-black overflow-hidden font-sans">
+    <!-- Camera Background -->
     <video
       ref="videoElement"
       class="absolute top-0 left-0 w-full h-full object-cover z-0"
@@ -16,6 +7,12 @@
       playsinline
       muted
     ></video>
+
+    <!-- Background Loading Status (Non-blocking) -->
+    <div v-if="!isScannerReady" class="absolute top-24 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 bg-black/40 backdrop-blur-md px-4 py-2 rounded-full border border-white/10">
+      <UIcon name="i-heroicons-arrow-path" class="w-4 h-4 animate-spin text-amber-400" />
+      <span class="text-[10px] font-black text-white uppercase tracking-widest">Sistem Hazırlanıyor...</span>
+    </div>
     
     <!-- Scanner Overlay (Target Frame) -->
     <div class="z-10 pointer-events-none relative w-full h-full flex flex-col items-center justify-center p-4">
@@ -259,13 +256,23 @@ const startProcessingLoop = () => {
 
 const checkBrandStatus = (scanResult) => {
   const { text, barcode } = scanResult
+  if (!text && !barcode) return
+
+  // Temizleme fonksiyonu: Boşluk, tire vb. kaldırır
+  const normalize = (str) => str.toLowerCase().replace(/[^a-z0-9]/g, '')
+  const cleanText = normalize(text)
+
+  console.log('🔍 Taranan Metin:', text)
+  if (barcode) console.log('🏷 Barkod:', barcode)
   
-  const match = brands.value.find(b => 
-    text.includes(b.name.toLowerCase()) || 
-    (barcode && b.barcode === barcode)
-  )
+  // Marka eşleştirme
+  const match = brands.value.find(b => {
+    const brandName = normalize(b.name)
+    return cleanText.includes(brandName) || (barcode && b.barcode === barcode)
+  })
   
   if (match) {
+    console.log('✅ Eşleşme Bulundu:', match.name)
     const filteredAlternatives = match.alternatives.filter(alt => 
       alt.in.includes(detectedMarketId.value) || alt.in.includes('GENEL')
     )

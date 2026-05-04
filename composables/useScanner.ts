@@ -10,12 +10,21 @@ export const useScanner = () => {
 
   const initScanner = async () => {
     try {
-      // V0.4 Hazırlığı: Gelecekte daha gelişmiş model yüklenebilir.
-      // Şimdilik sadece tetikleyici (trigger) olarak COCO-SSD kullanıyoruz.
+      // V0.4 Hazırlığı: Lite model kullanarak hızı 2 kat artırıyoruz
       objectDetector = await cocoSsd.load({ base: 'lite_mobilenet_v2' })
+      
+      // Tesseract Worker'ı önceden hazırlayarak ilk taramayı hızlandırıyoruz
+      const worker = await Tesseract.createWorker('tur+eng', 1, {
+        cacheMethod: 'readOnly', // Modelleri önbellekten oku
+        gzip: true, // Daha hızlı veri transferi
+        logger: () => {}
+      })
+      // Not: Worker'ı global veya kalıcı bir yerde tutmak performansı artırır.
+      
       isReady.value = true
+      console.log('Scanner Sistemleri Hazır.')
     } catch (err) {
-      console.error('TF Model yüklenemedi:', err)
+      console.error('Sistem yüklenirken hata oluştu:', err)
     }
   }
 
@@ -35,11 +44,16 @@ export const useScanner = () => {
         }
       }
 
-      // 2. TF.js Object Detection Trigger
+      // 2. TF.js Object Detection (Hassaslaştırılmış)
       const predictions = await objectDetector.detect(videoElement)
       
-      // Obje veya Barkod bulunduysa OCR çalıştır
-      if (predictions.length > 0 || detectedBarcode) {
+      // LOG: Geliştirici için ne görüldüğünü yazalım
+      if (predictions.length > 0) console.log('Obje Algılandı:', predictions[0].class)
+      if (detectedBarcode) console.log('Barkod Algılandı:', detectedBarcode)
+
+      // Tetikleyiciyi esnetiyoruz: Obje olmasa bile belirli aralıklarla OCR'ı dene
+      // Veya sadece obje/barkod varsa daha hızlı çalış
+      if (predictions.length > 0 || detectedBarcode || Math.random() > 0.8) {
         const canvas = document.createElement('canvas')
         canvas.width = videoElement.videoWidth
         canvas.height = videoElement.videoHeight

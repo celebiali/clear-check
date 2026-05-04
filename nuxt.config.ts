@@ -39,10 +39,24 @@ export default defineNuxtConfig({
       globPatterns: ['**/*.{js,css,html,png,svg,ico,json}'],
       runtimeCaching: [
         {
-          urlPattern: /^https:\/\/tessdata\.cepstral\.com\/.*$/i, // Tesseract models
+          urlPattern: /^https:\/\/cdn\.jsdelivr\.net\/.*/i,
           handler: 'CacheFirst',
           options: {
-            cacheName: 'tesseract-models',
+            cacheName: 'external-resources',
+            expiration: {
+              maxEntries: 50,
+              maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
+            },
+            cacheableResponse: {
+              statuses: [0, 200]
+            }
+          }
+        },
+        {
+          urlPattern: /^https:\/\/tessdata\.projectnaptha\.com\/.*/i,
+          handler: 'CacheFirst',
+          options: {
+            cacheName: 'tesseract-data',
             expiration: {
               maxEntries: 10,
               maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
