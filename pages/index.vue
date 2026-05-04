@@ -8,12 +8,6 @@
       playsinline
       muted
     ></video>
-
-    <!-- Background Loading Status (Non-blocking) -->
-    <div v-if="!isScannerReady" class="absolute top-24 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 bg-black/40 backdrop-blur-md px-4 py-2 rounded-full border border-white/10">
-      <UIcon name="i-heroicons-arrow-path" class="w-4 h-4 animate-spin text-amber-400" />
-      <span class="text-[10px] font-black text-white uppercase tracking-widest">Sistem Hazırlanıyor...</span>
-    </div>
     
     <!-- Scanner Overlay (Target Frame) -->
     <div class="z-10 pointer-events-none relative w-full h-full flex flex-col items-center justify-center p-4">
