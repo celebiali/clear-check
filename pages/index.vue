@@ -259,21 +259,39 @@ const startProcessingLoop = () => {
   animationFrameId = requestAnimationFrame(loop)
 }
 
-const checkBrandStatus = (scanResult) => {
+const checkBrandStatus = async (scanResult) => {
   const { text, barcode } = scanResult
   if (!text && !barcode) return
 
-  // Temizleme fonksiyonu: Boşluk, tire vb. kaldırır
-  const normalize = (str) => str.toLowerCase().replace(/[^a-z0-9]/g, '')
-  const cleanText = normalize(text)
+  let brandToMatch = ''
 
-  console.log('🔍 Taranan Metin:', text)
-  if (barcode) console.log('🏷 Barkod:', barcode)
-  
-  // Marka eşleştirme
+  // 1. ADIM: Barkod varsa Dünyanın en büyük veritabanına sor (Open Food Facts)
+  if (barcode) {
+    try {
+      console.log('🌐 Barkod sorgulanıyor:', barcode)
+      const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`)
+      const data = await res.json()
+      
+      if (data.status === 1 && data.product.brands) {
+        brandToMatch = data.product.brands.split(',')[0].toLowerCase()
+        console.log('📦 Ürün Markası Bulundu:', brandToMatch)
+      }
+    } catch (err) {
+      console.error('API Sorgu Hatası:', err)
+    }
+  }
+
+  // 2. ADIM: Eşleştirme Mantığı
+  const normalize = (str) => str ? str.toLowerCase().replace(/[^a-z0-9]/g, '') : ''
+  const cleanText = normalize(text)
+  const cleanApiBrand = normalize(brandToMatch)
+
   const match = brands.value.find(b => {
     const brandName = normalize(b.name)
-    return cleanText.includes(brandName) || (barcode && b.barcode === barcode)
+    // Ya OCR metninde geçmeli, ya da API'den gelen marka ismiyle birebir eşleşmeli
+    return (cleanText && cleanText.includes(brandName)) || 
+           (cleanApiBrand && cleanApiBrand.includes(brandName)) ||
+           (barcode && b.barcode === barcode)
   })
   
   if (match) {
