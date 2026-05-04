@@ -1,0 +1,19 @@
+name: Teroson
+status: avoid
+description: |-
+  Owned by **Henkel**.
+
+  **Henkel** invests in Israeli technology namely by investing in Feelit. A company with its roots in Israel.[^1]
+
+  [^1]: https://www.henkel.com/press-and-media/press-releases-and-kits/2021-01-07-henkel-invests-in-technology-start-up-feelit-1141594
+reasons:
+- operations_in_israel
+countries:
+- global
+categories: []
+logo_url: |-
+  https://www.henkel.nl/resource/image/22598/1x1/1000/1000/a710b5a3f8f9d3e1aeedcf0fe7bf4433/2646E74A06742F88D5B6D2BF13FDEC25/teroson-logo.webp
+alternatives: []
+stakeholders:
+- id: henkel
+  type: owner

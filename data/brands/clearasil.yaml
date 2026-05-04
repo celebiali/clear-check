@@ -1,0 +1,17 @@
+name: Clearasil
+status: avoid
+description: |-
+  Owned by **Reckitt Benckiser**
+
+  **Reckitt Benckiser** signs a cooperation agreement with the Israel Innovation Authority.[^1]
+
+  [^1]: https://en.globes.co.il/en/article-reckitt-benckiser-seeks-investments-in-israeli-cos-1001262747
+reasons:
+- operations_in_israel
+countries:
+- global
+categories: []
+alternatives: []
+stakeholders:
+- id: reckitt-benckiser
+  type: owner

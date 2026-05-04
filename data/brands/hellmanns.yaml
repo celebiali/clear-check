@@ -1,0 +1,19 @@
+name: Hellmann's
+status: avoid
+description: |-
+  Owned by **Unilever**.
+
+  **Hellmann's** and Ben & Jerry's are owned by **Unilever**. When Ben & Jerry's decided to stop selling its products in Israel, **Unilever** sold off the Israeli distribution rights to Avi Zinger to circumvent their decision and to force Ben & Jerry's brand name to continue selling in Israel.[^1]
+
+  [^1]: https://www.unilever.com/news/press-and-media/press-releases/2022/unilever-reaches-new-business-arrangement-for-ben-jerrys-in-israel/
+reasons:
+- operations_in_israel
+countries:
+- global
+categories: []
+logo_url: |-
+  https://1000logos.net/wp-content/uploads/2020/07/Hellmanns-Logo.png
+alternatives: []
+stakeholders:
+- id: unilever
+  type: owner
