@@ -2,13 +2,61 @@
   {
     "name": "Doritos",
     "status": "boykot",
-    "reason": "Şirket politikaları nedeniyle",
-    "alternative": "Patos"
+    "reason": "Frito-Lay (PepsiCo) markası olması sebebiyle.",
+    "alternatives": [
+      { "name": "Patos", "in": ["MIGROS", "A101", "CARREFOUR"] },
+      { "name": "Chips Master", "in": ["BIM", "A101"] },
+      { "name": "Peyman Dorleo", "in": ["MIGROS", "CARREFOUR"] }
+    ]
   },
   {
     "name": "Coca Cola",
     "status": "boykot",
-    "reason": "Yatırım kararları nedeniyle",
-    "alternative": "Uludağ"
+    "reason": "Yüksek yatırım ve siyasi destek kararları.",
+    "alternatives": [
+      { "name": "Uludağ Gazoz", "in": ["MIGROS", "A101", "BIM", "CARREFOUR"] },
+      { "name": "Niğde Gazozu", "in": ["BIM", "A101"] },
+      { "name": "Beypazarı", "in": ["MIGROS", "BIM", "A101"] }
+    ]
+  },
+  {
+    "name": "Lays",
+    "status": "boykot",
+    "reason": "PepsiCo iştiraki olması sebebiyle.",
+    "alternatives": [
+      { "name": "Patos", "in": ["MIGROS", "A101", "CARREFOUR"] },
+      { "name": "Amigo", "in": ["SHOCK"] },
+      { "name": "Chips Master", "in": ["BIM", "A101"] }
+    ]
+  },
+  {
+    "name": "Nescafe",
+    "status": "boykot",
+    "reason": "Nestle markası olması sebebiyle.",
+    "alternatives": [
+      { "name": "Kurukahveci Mehmet Efendi", "in": ["MIGROS", "BIM", "A101", "CARREFOUR"] },
+      { "name": "Kahve Dünyası", "in": ["MIGROS", "CARREFOUR"] },
+      { "name": "Cafe Crown", "in": ["BIM", "A101"] }
+    ]
+  },
+  {
+    "name": "Ariel",
+    "status": "boykot",
+    "reason": "P&G markası olması sebebiyle.",
+    "alternatives": [
+      { "name": "ABC", "in": ["MIGROS", "BIM", "A101"] },
+      { "name": "Peros", "in": ["A101", "BIM"] },
+      { "name": "Bingo", "in": ["MIGROS", "CARREFOUR"] }
+    ]
+  },
+  {
+    "name": "Algida",
+    "status": "boykot",
+    "reason": "Unilever markası olması sebebiyle.",
+    "alternatives": [
+      { "name": "Golf Dondurma", "in": ["MIGROS", "A101", "CARREFOUR"] },
+      { "name": "Dost Dondurma", "in": ["BIM"] },
+      { "name": "Panda", "in": ["MIGROS", "A101"] }
+    ]
   }
 ]

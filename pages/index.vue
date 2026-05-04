@@ -76,16 +76,19 @@
         </p>
 
         <!-- Alternative Suggestion Card (If boycotted) -->
-        <div v-if="detectedBrand.status === 'boykot' && detectedBrand.alternative" class="mt-5 bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-5 border border-gray-200 shadow-sm">
+        <div v-if="detectedBrand.status === 'boykot' && detectedBrand.displayAlternatives?.length" class="mt-5 bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-5 border border-gray-200 shadow-sm">
           <div class="flex items-center gap-2 mb-3">
             <UIcon name="i-heroicons-sparkles" class="w-5 h-5 text-amber-500" />
-            <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider">Önerilen Alternatif</h4>
+            <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider">Önerilen Alternatifler</h4>
           </div>
-          <div class="flex items-center justify-between">
-            <span class="font-black text-xl text-gray-800">{{ detectedBrand.alternative }}</span>
-            <UButton size="md" color="primary" variant="solid" icon="i-heroicons-shopping-bag" class="font-bold shadow-md hover:shadow-lg transition-shadow" to="#" target="_blank">
-              Satın Al
-            </UButton>
+          
+          <div class="flex flex-col gap-3">
+            <div v-for="alt in detectedBrand.displayAlternatives" :key="alt.name" class="flex items-center justify-between bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
+              <span class="font-bold text-lg text-gray-800">{{ alt.name }}</span>
+              <UButton size="sm" color="primary" variant="soft" icon="i-heroicons-shopping-bag" class="font-bold">
+                İncele
+              </UButton>
+            </div>
           </div>
         </div>
       </div>
@@ -104,14 +107,15 @@ let stream = null
 let animationFrameId = null
 
 const { initScanner, processFrame, isReady: isScannerReady, isProcessing } = useScanner()
+const { detectedMarketId } = useMarketContext()
 
 onMounted(async () => {
-  // Load Brands JSON
+  // Canlı API üzerinden verileri çek (GitHub tabanlı)
   try {
-    const res = await fetch('/brands.json')
+    const res = await fetch('/api/brands')
     brands.value = await res.json()
   } catch (err) {
-    console.error('Brands verisi yüklenemedi', err)
+    console.error('Canlı veri çekilemedi, lütfen internet bağlantınızı kontrol edin.', err)
   }
 
   // Modelleri yükle
@@ -168,11 +172,19 @@ const startProcessingLoop = () => {
 
 const checkBrandStatus = (scannedText) => {
   // JSON içindeki markalarla eşleşme ara
-  // Marka isimleri text içinde geçiyor mu?
   const match = brands.value.find(b => scannedText.includes(b.name.toLowerCase()))
   
   if (match) {
-    detectedBrand.value = match
+    // Market bazlı filtreleme: Sadece şu anki markette olan alternatifleri getir
+    const filteredAlternatives = match.alternatives.filter(alt => 
+      alt.in.includes(detectedMarketId.value) || alt.in.includes('GENEL')
+    )
+
+    detectedBrand.value = {
+      ...match,
+      displayAlternatives: filteredAlternatives
+    }
+    
     triggerVibration(match.status)
   }
 }
