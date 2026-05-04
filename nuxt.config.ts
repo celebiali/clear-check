@@ -8,6 +8,9 @@ export default defineNuxtConfig({
     global: true,
   },
   vite: {
+    optimizeDeps: {
+      include: ['@zxing/library']
+    },
     server: {
       hmr: {
         protocol: 'ws',

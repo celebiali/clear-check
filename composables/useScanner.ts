@@ -1,64 +1,48 @@
 import { ref } from 'vue'
-import Tesseract from 'tesseract.js'
-import { BrowserMultiFormatReader } from '@zxing/library'
+import { BrowserMultiFormatReader, NotFoundException } from '@zxing/library'
 
 export const useScanner = () => {
-  const isReady = ref(true)
+  const isReady = ref(false)
   const isProcessing = ref(false)
-  const codeReader = new BrowserMultiFormatReader()
-  let tesseractWorker: Tesseract.Worker | null = null
+  let reader: BrowserMultiFormatReader | null = null
 
-  const initOCR = async () => {
-    if (tesseractWorker) return tesseractWorker
-    tesseractWorker = await Tesseract.createWorker('tur+eng', 1, {
-      cacheMethod: 'readOnly',
-      gzip: true,
-      logger: () => {}
-    })
-    return tesseractWorker
+  const initScanner = async () => {
+    reader = new BrowserMultiFormatReader()
+    isReady.value = true
   }
 
-  const processFrame = async (videoElement: HTMLVideoElement): Promise<{ text?: string, barcode?: string } | null> => {
-    if (isProcessing.value) return null
+  const processFrame = async (videoElement: HTMLVideoElement): Promise<{ barcode: string } | null> => {
+    if (isProcessing.value || !reader) return null
     isProcessing.value = true
 
     try {
-      // 1. ADIM: Güçlendirilmiş Barkod Tarama (Zxing - iPhone/Android uyumlu)
-      try {
-        const result = await codeReader.decodeFromVideoElement(videoElement)
-        if (result) {
-          const barcode = result.getText()
-          return { barcode }
-        }
-      } catch (e) {
-        // Barkod bulunamadıysa devam et
-      }
-
-      // 2. ADIM: OCR (Metin Okuma)
+      // 1. Video karesini yakala
       const canvas = document.createElement('canvas')
       canvas.width = videoElement.videoWidth
       canvas.height = videoElement.videoHeight
       const ctx = canvas.getContext('2d')
-      if (ctx) {
-        ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height)
-        const worker = await initOCR()
-        const { data: { text } } = await worker.recognize(canvas)
-        
-        return {
-          text: text.trim().toLowerCase(),
-        }
+      if (!ctx) return null
+      ctx.drawImage(videoElement, 0, 0)
+
+      // 2. Canvas'ı bir imaj gibi okut (En kararlı yöntem)
+      const result = await reader.decodeFromImageElement(canvas as unknown as HTMLImageElement)
+      
+      if (result) {
+        return { barcode: result.getText() }
       }
     } catch (err) {
-      // Sessiz hata yönetimi
+      if (!(err instanceof NotFoundException)) {
+        // console.warn('Tarama hatası:', err)
+      }
     } finally {
       isProcessing.value = false
     }
-    
+
     return null
   }
 
   return {
-    initScanner: () => Promise.resolve(),
+    initScanner,
     processFrame,
     isReady,
     isProcessing

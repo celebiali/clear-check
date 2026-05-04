@@ -1,48 +1,47 @@
 import { defineEventHandler } from 'h3'
 
-// TechForPalestine veya benzeri açık kaynaklı boykot listeleri
 const DATA_SOURCE_URL = 'https://raw.githubusercontent.com/TechForPalestine/boycott-israeli-consumer-goods-dataset/main/data/brands.json'
 
-// Yerel market alternatifleri eşleştirme tablosu (Türkiyeye özel)
-// Bu tabloyu dışarıdan gelen veriyi zenginleştirmek için kullanacağız.
-const marketEnrichment = {
-  'Coca-Cola': { alternatives: [{ name: 'Uludağ Gazoz', in: ['MIGROS', 'BIM', 'A101'] }, { name: 'Niğde Gazozu', in: ['BIM'] }] },
-  'Pepsi': { alternatives: [{ name: 'Uludağ Gazoz', in: ['MIGROS', 'BIM', 'A101'] }] },
-  'Doritos': { alternatives: [{ name: 'Patos', in: ['MIGROS', 'A101'] }, { name: 'Chips Master', in: ['BIM'] }] },
-  'Lays': { alternatives: [{ name: 'Patos', in: ['MIGROS', 'A101'] }, { name: 'Chips Master', in: ['BIM'] }] },
-  'Nescafe': { alternatives: [{ name: 'Kurukahveci Mehmet Efendi', in: ['MIGROS', 'BIM', 'A101'] }, { name: 'Kahve Dünyası', in: ['MIGROS'] }] },
-  'Algida': { alternatives: [{ name: 'Golf Dondurma', in: ['MIGROS', 'A101'] }, { name: 'Dost Dondurma', in: ['BIM'] }] },
-  'Ariel': { alternatives: [{ name: 'ABC', in: ['MIGROS', 'BIM', 'A101'] }, { name: 'Bingo', in: ['MIGROS'] }] }
-}
+// Kritik Markalar (API Bozuksa veya Marka Eksikse Devreye Girer)
+const fallbackBrands = [
+  { name: 'Coca-Cola', status: 'boykot', reason: 'İsrail ekonomisine doğrudan destek.', alternatives: [{ name: 'Uludağ Gazoz', in: ['GENEL'] }, { name: 'Niğde Gazozu', in: ['GENEL'] }] },
+  { name: 'Pepsi', status: 'boykot', reason: 'Boykot listesinde yer alıyor.', alternatives: [{ name: 'Uludağ Gazoz', in: ['GENEL'] }] },
+  { name: 'Nestle', status: 'boykot', reason: 'İsrail yerleşim birimlerine destek.', alternatives: [{ name: 'Ülker', in: ['GENEL'] }, { name: 'Eti', in: ['GENEL'] }] },
+  { name: 'Nescafe', status: 'boykot', reason: 'Nestle iştiraki.', alternatives: [{ name: 'Kahve Dünyası', in: ['GENEL'] }] },
+  { name: 'Danone', status: 'boykot', reason: 'Siyasi ve ekonomik destek gerekçesi.', alternatives: [{ name: 'Sütaş', in: ['GENEL'] }] },
+  { name: 'Starbucks', status: 'boykot', reason: 'Boykot çağrılarına konu olan politikalar.', alternatives: [{ name: 'Espressolab', in: ['GENEL'] }] },
+  { name: 'Lays', status: 'boykot', reason: 'Pepsico iştiraki.', alternatives: [{ name: 'Patos', in: ['GENEL'] }] }
+]
 
 export default defineEventHandler(async (event) => {
   try {
-    // 1. Canlı veriyi GitHub'dan çek
     const response = await fetch(DATA_SOURCE_URL)
-    if (!response.ok) throw new Error('Dış veri kaynağına ulaşılamadı.')
+    let externalBrands = []
     
-    const externalBrands = await response.json()
+    if (response.ok) {
+      externalBrands = await response.json()
+    }
+
+    // Gelen veriyi işle ve fallback ile birleştir
+    const apiData = externalBrands.map((item: any) => ({
+      name: item.name || item.brand,
+      status: 'boykot',
+      reason: item.description || 'Boykot listesinde yer alıyor.',
+      alternatives: [{ name: 'Yerel Alternatifleri Kontrol Edin', in: ['GENEL'] }]
+    }))
+
+    // İsim bazlı tekilleştirme yapalım ki mükerrer kayıt olmasın
+    const finalData = [...fallbackBrands]
     
-    // 2. Gelen veriyi bizim formatımıza ve market yapımıza uyarla
-    // TechForPalestine verisi genelde { name, description, category } yapısındadır.
-    const enrichedData = externalBrands.map((item: any) => {
-      const name = item.name || item.brand
-      const enrichment = marketEnrichment[name as keyof typeof marketEnrichment]
-      
-      return {
-        name: name,
-        status: 'boykot',
-        reason: item.description || item.reason || 'Boykot listesinde yer alıyor.',
-        alternatives: enrichment ? enrichment.alternatives : [
-          { name: 'Yerel Alternatifleri Kontrol Edin', in: ['GENEL'] }
-        ]
+    apiData.forEach((brand: any) => {
+      if (!finalData.some(f => f.name.toLowerCase() === brand.name.toLowerCase())) {
+        finalData.push(brand)
       }
     })
 
-    return enrichedData
+    return finalData
   } catch (error) {
     console.error('Fetch error:', error)
-    // Hata durumunda boş dönmek yerine bir fallback mekanizması veya hata mesajı dönebiliriz.
-    return []
+    return fallbackBrands // Hata durumunda sadece yedek listeyi dön
   }
 })

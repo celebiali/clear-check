@@ -1,5 +1,6 @@
 <template>
   <div class="fixed inset-0 bg-black overflow-hidden font-sans">
+    
     <!-- Camera Background -->
     <video
       ref="videoElement"
@@ -8,156 +9,127 @@
       playsinline
       muted
     ></video>
-    
-    <!-- Visual Debugger (Only for dev/testing) -->
-    <div class="absolute bottom-4 left-0 w-full z-50 px-8 pointer-events-none">
-      <div class="bg-black/60 backdrop-blur-md text-[10px] text-white/60 p-2 rounded-xl text-center font-mono">
-        {{ debugLog }}
-      </div>
-    </div>
 
     <!-- Top Action Bar -->
-    <div class="absolute top-8 left-0 w-full z-[100] px-6 flex justify-between items-center pointer-events-none">
-      <div class="bg-white/10 backdrop-blur-xl px-5 py-2 rounded-2xl border border-white/20 text-white text-[10px] font-black tracking-widest uppercase pointer-events-auto shadow-xl">
+    <div class="absolute top-8 left-0 w-full z-[100] px-6 flex justify-between items-center">
+      <div class="bg-white/10 backdrop-blur-xl px-5 py-2 rounded-2xl border border-white/20 text-white text-[10px] font-black tracking-widest uppercase shadow-xl">
         ClearCheck <span class="text-green-400 ml-1">Pro</span>
       </div>
       
       <button 
-        @click="isSearchOpen = true" 
-        class="w-12 h-12 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 text-white flex items-center justify-center pointer-events-auto active:scale-95 transition-all shadow-xl"
+        @click="openSearch" 
+        class="w-12 h-12 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 text-white flex items-center justify-center active:scale-95 transition-all shadow-xl"
       >
         <UIcon name="i-heroicons-magnifying-glass" class="w-6 h-6" />
       </button>
     </div>
 
     <!-- Search Overlay -->
-    <Transition name="fade">
-      <div v-if="isSearchOpen" class="fixed inset-0 z-[110] bg-gray-950/98 backdrop-blur-3xl p-6 overflow-y-auto">
-        <div class="max-w-md mx-auto h-full flex flex-col pt-12">
-          <div class="flex items-center gap-4 mb-8">
-            <UInput
-              v-model="searchQuery"
-              placeholder="Marka ismi yazın..."
-              size="xl"
-              class="flex-1 search-input"
-              variant="none"
-              autocomplete="off"
-              :ui="{ base: 'bg-white/10 text-white text-lg font-bold placeholder-white/30 h-16 px-6 rounded-3xl border border-white/10 focus:border-green-400/50 transition-all pointer-events-auto' }"
-            />
-            <UButton color="white" variant="ghost" size="xl" class="rounded-2xl shrink-0" @click="isSearchOpen = false">Kapat</UButton>
-          </div>
+    <div v-if="isSearchOpen" class="fixed inset-0 z-[200] bg-gray-950 p-6 overflow-y-auto">
+      <div class="max-w-md mx-auto flex flex-col pt-8">
+        <div class="flex items-center gap-3 mb-6">
+          <input
+            ref="searchInputRef"
+            v-model="searchQuery"
+            type="text"
+            placeholder="Marka ismi yazın..."
+            class="flex-1 bg-white/10 text-white text-lg font-bold placeholder-white/30 h-14 px-6 rounded-2xl border border-white/10 focus:border-green-400/50 focus:outline-none transition-all"
+          />
+          <button 
+            @click="closeSearch"
+            class="text-white/60 text-sm font-bold px-4 py-3 rounded-xl hover:bg-white/10 transition-all"
+          >
+            Kapat
+          </button>
+        </div>
 
-          <div v-if="searchResults.length > 0" class="space-y-4">
-            <h4 class="text-xs font-black text-gray-500 uppercase tracking-widest mb-4">Önerilen Markalar</h4>
-            <div 
-              v-for="brand in searchResults" 
-              :key="brand.name"
-              @click="selectFromSearch(brand)"
-              class="bg-white/5 hover:bg-white/10 p-6 rounded-[2rem] border border-white/10 flex items-center justify-between cursor-pointer transition-all"
-            >
-              <div class="flex items-center gap-4">
-                <div class="w-10 h-10 rounded-full flex items-center justify-center" :class="brand.status === 'boykot' ? 'bg-red-500/20 text-red-500' : 'bg-green-500/20 text-green-500'">
-                  <UIcon :name="brand.status === 'boykot' ? 'i-heroicons-x-circle' : 'i-heroicons-check-circle'" class="w-6 h-6" />
-                </div>
-                <span class="text-white text-xl font-bold">{{ brand.name }}</span>
+        <!-- Search Results -->
+        <div v-if="searchResults.length > 0" class="space-y-3">
+          <h4 class="text-xs font-black text-gray-500 uppercase tracking-widest mb-3">Sonuçlar</h4>
+          <div 
+            v-for="brand in searchResults" 
+            :key="brand.name"
+            @click="selectFromSearch(brand)"
+            class="bg-white/5 p-5 rounded-2xl border border-white/10 flex items-center justify-between cursor-pointer active:bg-white/10 transition-all"
+          >
+            <div class="flex items-center gap-4">
+              <div class="w-10 h-10 rounded-full flex items-center justify-center" :class="brand.status === 'boykot' ? 'bg-red-500/20' : 'bg-green-500/20'">
+                <UIcon 
+                  :name="brand.status === 'boykot' ? 'i-heroicons-x-circle' : 'i-heroicons-check-circle'" 
+                  class="w-6 h-6"
+                  :class="brand.status === 'boykot' ? 'text-red-400' : 'text-green-400'"
+                />
               </div>
-              <UIcon name="i-heroicons-chevron-right" class="text-white/20" />
+              <span class="text-white text-lg font-bold">{{ brand.name }}</span>
             </div>
-          </div>
-          
-          <div v-else-if="searchQuery" class="text-center py-12">
-            <p class="text-white/40">Sonuç bulunamadı.</p>
+            <UIcon name="i-heroicons-chevron-right" class="text-white/20 w-5 h-5" />
           </div>
         </div>
-      </div>
-    </Transition>
+        
+        <div v-else-if="searchQuery.length >= 2" class="text-center py-12">
+          <p class="text-white/40 text-sm">Bu isimde bir marka bulunamadı.</p>
+        </div>
 
-    <!-- Scanner Overlay (Target Frame) -->
-    <div class="z-10 pointer-events-none absolute inset-0 flex flex-col items-center justify-center p-4">
-      <!-- Frame -->
-      <div class="w-80 h-80 border-2 border-white/20 rounded-[3rem] relative shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden bg-white/5 backdrop-blur-[2px]">
-        <!-- Scanning animation line -->
-        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-green-400 to-transparent opacity-100 scan-line shadow-[0_0_20px_#4ade80]"></div>
-        
-        <!-- Center Crosshair -->
-        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 border border-white/30 rounded-full"></div>
-        
-        <!-- Corner decorations -->
-        <div class="absolute top-6 left-6 w-12 h-12 border-t-4 border-l-4 border-green-400 rounded-tl-2xl"></div>
-        <div class="absolute top-6 right-6 w-12 h-12 border-t-4 border-r-4 border-green-400 rounded-tr-2xl"></div>
-        <div class="absolute bottom-6 left-6 w-12 h-12 border-b-4 border-l-4 border-green-400 rounded-bl-2xl"></div>
-        <div class="absolute bottom-6 right-6 w-12 h-12 border-b-4 border-r-4 border-green-400 rounded-br-2xl"></div>
-      </div>
-      
-      <!-- Bottom Status -->
-      <div class="absolute bottom-28 flex flex-col items-center gap-3">
-        <div v-if="isProcessing" class="flex items-center gap-3 text-white bg-green-500/20 px-6 py-2 rounded-full border border-green-500/30 backdrop-blur-md text-xs font-bold uppercase tracking-widest animate-pulse">
-          <div class="w-2 h-2 bg-green-400 rounded-full"></div>
-          Görüntü İşleniyor
+        <div v-else class="text-center py-12">
+          <p class="text-white/30 text-sm">Aramak istediğiniz marka ismini yazın.</p>
         </div>
       </div>
     </div>
 
+    <!-- Scanner Overlay -->
+    <div class="absolute inset-0 z-10 pointer-events-none flex flex-col items-center justify-center p-4">
+      <div class="w-72 h-72 border-2 border-white/20 rounded-[3rem] relative overflow-hidden bg-white/5">
+        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-green-400 to-transparent scan-line shadow-[0_0_20px_#4ade80]"></div>
+        <div class="absolute top-4 left-4 w-10 h-10 border-t-3 border-l-3 border-green-400 rounded-tl-xl"></div>
+        <div class="absolute top-4 right-4 w-10 h-10 border-t-3 border-r-3 border-green-400 rounded-tr-xl"></div>
+        <div class="absolute bottom-4 left-4 w-10 h-10 border-b-3 border-l-3 border-green-400 rounded-bl-xl"></div>
+        <div class="absolute bottom-4 right-4 w-10 h-10 border-b-3 border-r-3 border-green-400 rounded-br-xl"></div>
+      </div>
+    </div>
+
+    <!-- Debug Log -->
+    <div class="absolute bottom-4 left-0 w-full z-[90] px-6 pointer-events-none">
+      <div class="bg-black/70 backdrop-blur text-[10px] text-white/50 p-2 rounded-xl text-center font-mono">
+        {{ debugLog }}
+      </div>
+    </div>
+
     <!-- Error State -->
-    <div v-if="errorMsg" class="absolute inset-0 z-50 flex items-center justify-center bg-gray-950/90 backdrop-blur-2xl p-4">
-      <div class="bg-white rounded-[3rem] shadow-2xl w-full max-w-sm p-10 text-center border border-red-50/50">
-        <div class="w-24 h-24 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-8 shadow-inner">
-          <UIcon name="i-heroicons-video-camera-slash" class="w-12 h-12 text-red-500" />
+    <div v-if="errorMsg" class="absolute inset-0 z-[150] flex items-center justify-center bg-black/90 p-6">
+      <div class="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-8 text-center">
+        <div class="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6">
+          <UIcon name="i-heroicons-video-camera-slash" class="w-10 h-10 text-red-500" />
         </div>
-        <h3 class="font-black text-3xl text-gray-900 mb-6 tracking-tight">Kamera İzni</h3>
-        <p class="text-gray-500 text-lg leading-relaxed mb-8">Ürünleri analiz edebilmem için kamera erişimine ihtiyacım var.</p>
-        <UButton color="black" variant="solid" size="xl" class="font-black rounded-2xl w-full justify-center py-4 text-lg shadow-xl" @click="initCamera">
-          İzin Ver
-        </UButton>
+        <h3 class="font-black text-2xl text-gray-900 mb-4">Kamera İzni</h3>
+        <p class="text-gray-500 text-sm leading-relaxed mb-6">Ürünleri analiz edebilmem için kamera erişimine ihtiyacım var.</p>
+        <button @click="initCamera" class="bg-black text-white font-bold rounded-2xl w-full py-4 text-base">İzin Ver</button>
       </div>
     </div>
 
     <!-- Result Card -->
     <Transition name="slide-up">
-      <div v-if="detectedBrand" class="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-30 w-[92%] max-w-md bg-white/95 backdrop-blur-2xl rounded-[3rem] shadow-[0_20px_50px_rgba(0,0,0,0.3)] p-8 transition-all border border-white/20 overflow-hidden">
-        
-        <!-- Brand Header Section -->
-        <div class="flex items-start justify-between mb-6">
-          <div class="flex-1">
-            <div class="flex items-center gap-3 mb-2">
-              <div class="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg transform rotate-3" :class="detectedBrand.status === 'boykot' ? 'bg-red-500 text-white' : 'bg-green-500 text-white'">
-                <UIcon :name="detectedBrand.status === 'boykot' ? 'i-heroicons-exclamation-circle' : 'i-heroicons-check-badge'" class="w-8 h-8" />
-              </div>
-              <div>
-                <h2 class="text-3xl font-black text-gray-900 leading-none tracking-tighter">{{ detectedBrand.name }}</h2>
-                <span class="text-[10px] font-black tracking-[0.2em] uppercase opacity-40">Analiz Sonucu</span>
-              </div>
+      <div v-if="detectedBrand" class="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-[120] w-[90%] max-w-md bg-white rounded-3xl shadow-2xl p-6 border-t-4" :class="detectedBrand.status === 'boykot' ? 'border-red-500' : 'border-green-500'">
+        <div class="flex items-start justify-between mb-4">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center" :class="detectedBrand.status === 'boykot' ? 'bg-red-500 text-white' : 'bg-green-500 text-white'">
+              <UIcon :name="detectedBrand.status === 'boykot' ? 'i-heroicons-x-mark' : 'i-heroicons-check'" class="w-6 h-6" />
+            </div>
+            <div>
+              <h2 class="text-2xl font-black text-gray-900">{{ detectedBrand.name }}</h2>
+              <span class="text-xs font-bold uppercase tracking-widest" :class="detectedBrand.status === 'boykot' ? 'text-red-500' : 'text-green-500'">
+                {{ detectedBrand.status === 'boykot' ? 'Boykot Kapsamında' : 'Güvenilir' }}
+              </span>
             </div>
           </div>
-          <UButton color="gray" variant="soft" icon="i-heroicons-x-mark" class="rounded-full w-10 h-10 flex items-center justify-center shadow-sm" @click="clearResult" />
+          <button @click="clearResult" class="text-gray-400 p-2 rounded-full hover:bg-gray-100"><UIcon name="i-heroicons-x-mark" class="w-5 h-5" /></button>
         </div>
-
-        <!-- Status Pill -->
-        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-black tracking-widest uppercase mb-6 shadow-sm border" :class="detectedBrand.status === 'boykot' ? 'bg-red-50 text-red-600 border-red-100' : 'bg-green-50 text-green-600 border-green-100'">
-          <div class="w-2 h-2 rounded-full animate-pulse" :class="detectedBrand.status === 'boykot' ? 'bg-red-500' : 'bg-green-500'"></div>
-          {{ detectedBrand.status === 'boykot' ? 'Boykot Kapsamında' : 'Güvenilir Marka' }}
-        </div>
-
-        <p v-if="detectedBrand.reason" class="text-sm text-gray-500 leading-relaxed font-medium mb-8 italic">
-          "{{ detectedBrand.reason }}"
-        </p>
-
-        <!-- Premium Alternative Selection -->
-        <div v-if="detectedBrand.status === 'boykot' && detectedBrand.displayAlternatives?.length" class="space-y-4">
-          <div class="flex items-center justify-between px-1">
-            <h4 class="text-xs font-black text-gray-400 uppercase tracking-widest">Size Özel Alternatifler</h4>
-            <UIcon name="i-heroicons-sparkles" class="w-4 h-4 text-amber-400" />
-          </div>
-          
-          <div class="grid grid-cols-1 gap-3">
-            <div v-for="alt in detectedBrand.displayAlternatives" :key="alt.name" class="group flex items-center justify-between bg-gray-50 hover:bg-black hover:text-white p-4 rounded-[1.5rem] border border-gray-100 transition-all duration-300 cursor-pointer shadow-sm hover:shadow-xl">
-              <div class="flex items-center gap-4">
-                <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm group-hover:bg-white/10">
-                  <UIcon name="i-heroicons-shopping-cart" class="w-5 h-5 text-gray-400 group-hover:text-white" />
-                </div>
-                <span class="font-bold text-lg tracking-tight">{{ alt.name }}</span>
-              </div>
-              <UIcon name="i-heroicons-chevron-right" class="w-5 h-5 opacity-0 group-hover:opacity-100 transition-opacity" />
+        <p v-if="detectedBrand.reason" class="text-sm text-gray-500 mb-4">{{ detectedBrand.reason }}</p>
+        <div v-if="detectedBrand.status === 'boykot' && detectedBrand.displayAlternatives?.length" class="bg-gray-50 rounded-2xl p-4">
+          <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Alternatifler</h4>
+          <div class="space-y-2">
+            <div v-for="alt in detectedBrand.displayAlternatives" :key="alt.name" class="flex items-center gap-3 bg-white p-3 rounded-xl">
+              <UIcon name="i-heroicons-check-circle" class="w-5 h-5 text-green-500 shrink-0" />
+              <span class="font-bold text-gray-800">{{ alt.name }}</span>
             </div>
           </div>
         </div>
@@ -168,109 +140,78 @@
 
 <script setup>
 const videoElement = ref(null)
+const searchInputRef = ref(null)
 const errorMsg = ref('')
 const detectedBrand = ref(null)
 const brands = ref([])
 const searchQuery = ref('')
 const isSearchOpen = ref(false)
+const debugLog = ref('Başlatılıyor...')
 
+const { initScanner, processFrame, isReady: isScannerReady, isProcessing } = useScanner()
 const { detectedMarketId } = useMarketContext()
 
+let stream = null
+let animationFrameId = null
+let lastProcessTime = 0
+const PROCESS_INTERVAL = 500
+
 onMounted(async () => {
-  // 1. Önce Lokal Hafızadan Yükle (Offline Desteği)
-  const cachedBrands = localStorage.getItem('clearcheck_brands')
-  if (cachedBrands) {
-    brands.value = JSON.parse(cachedBrands)
-  }
-
-  // 2. Canlı API üzerinden verileri tazele
   try {
+    const cached = localStorage.getItem('clearcheck_brands')
+    if (cached) brands.value = JSON.parse(cached)
     const res = await fetch('/api/brands')
-    const freshData = await res.json()
-    if (freshData && freshData.length > 0) {
-      brands.value = freshData
-      localStorage.setItem('clearcheck_brands', JSON.stringify(freshData))
+    const data = await res.json()
+    if (Array.isArray(data) && data.length > 0) {
+      brands.value = data
+      localStorage.setItem('clearcheck_brands', JSON.stringify(data))
     }
-  } catch (err) {
-    console.warn('Canlı veri çekilemedi, çevrimdışı modda devam ediliyor.')
+    debugLog.value = `${brands.value.length} marka yüklendi.`
+  } catch (e) {
+    debugLog.value = 'Veri yüklenirken hata oluştu.'
   }
-
   await initScanner()
   await initCamera()
 })
 
-const searchInput = ref(null)
-
-// Arama açıldığında klavyeyi otomatik aç
-watch(isSearchOpen, (newVal) => {
-  if (newVal) {
-    nextTick(() => {
-      const input = document.querySelector('.search-input input')
-      if (input) input.focus()
-    })
-  }
+const searchResults = computed(() => {
+  if (!searchQuery.value || searchQuery.value.length < 2) return []
+  const q = searchQuery.value.toLowerCase().trim()
+  return brands.value.filter(b => b.name.toLowerCase().includes(q)).slice(0, 10)
 })
 
+const openSearch = () => {
+  isSearchOpen.value = true
+  nextTick(() => { if (searchInputRef.value) searchInputRef.value.focus() })
+}
+
+const closeSearch = () => { isSearchOpen.value = false; searchQuery.value = '' }
+
 const selectFromSearch = (brand) => {
-  checkBrandStatus({ text: brand.name.toLowerCase() })
-  isSearchOpen.value = false
-  searchQuery.value = ''
+  showBrandResult(brand)
+  closeSearch()
 }
 
 const initCamera = async () => {
-  errorMsg.value = ''
-  debugLog.value = 'Kamera başlatılıyor...'
   try {
-    // Önce en iyi ayarları dene
-    const constraints = {
-      video: { 
-        facingMode: 'environment',
-        width: { ideal: 1280 },
-        height: { ideal: 720 }
-      }
-    }
-    
-    try {
-      stream = await navigator.mediaDevices.getUserMedia(constraints)
-    } catch (e) {
-      console.warn('Yüksek çözünürlük başarısız, temel moda geçiliyor...')
-      // Başarısız olursa en basit ayarla dene
-      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-    }
-
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
     if (videoElement.value) {
       videoElement.value.srcObject = stream
       videoElement.value.onloadedmetadata = () => {
         videoElement.value.play()
-        debugLog.value = 'Kamera aktif. Tarama bekleniyor...'
         startProcessingLoop()
       }
     }
-  } catch (err) {
-    errorMsg.value = 'Kamera erişimi engellendi.'
-    debugLog.value = `Kamera Hatası: ${err.message}`
-    console.error('Camera error:', err)
-  }
+  } catch (e) { errorMsg.value = 'Kamera açılamadı.' }
 }
-
-let lastProcessTime = 0
-const PROCESS_INTERVAL = 300 // Hızlı tarama
 
 const startProcessingLoop = () => {
   const loop = async (timestamp) => {
-    if (
-      !detectedBrand.value && 
-      !isSearchOpen.value &&
-      (timestamp - lastProcessTime > PROCESS_INTERVAL)
-    ) {
+    if (isScannerReady.value && !detectedBrand.value && !isSearchOpen.value && !isProcessing.value && (timestamp - lastProcessTime > PROCESS_INTERVAL)) {
       lastProcessTime = timestamp
-      
-      if (videoElement.value && videoElement.value.readyState >= 2) {
-        debugLog.value = 'Ürün veya barkod aranıyor...'
-        const scanResult = await processFrame(videoElement.value)
-        if (scanResult) {
-          checkBrandStatus(scanResult)
-        }
+      if (videoElement.value?.readyState >= 2) {
+        const result = await processFrame(videoElement.value)
+        if (result?.barcode) await lookupBarcode(result.barcode)
       }
     }
     animationFrameId = requestAnimationFrame(loop)
@@ -278,118 +219,44 @@ const startProcessingLoop = () => {
   animationFrameId = requestAnimationFrame(loop)
 }
 
-const isCheckingBrand = ref(false)
-const debugLog = ref('Sistem hazır. Tarama bekleniyor...')
-
-const checkBrandStatus = async (scanResult) => {
-  if (isCheckingBrand.value) return
-  
-  const { text, barcode } = scanResult
-  if (!text && !barcode) return
-
-  isCheckingBrand.value = true
-  debugLog.value = barcode ? `Barkod sorgulanıyor: ${barcode}` : 'Metin analiz ediliyor...'
-
-  let brandToMatch = ''
-
-  if (barcode) {
-    try {
-      const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`)
-      const data = await res.json()
-      
-      if (data.status === 1 && data.product.brands) {
-        brandToMatch = data.product.brands.split(',')[0].toLowerCase()
-        debugLog.value = `Marka bulundu: ${brandToMatch}`
-      } else {
-        debugLog.value = 'Barkod veritabanında bulunamadı.'
-      }
-    } catch (err) {
-      debugLog.value = 'Bağlantı hatası (API).'
-    }
-  }
-
-  // 2. ADIM: Eşleştirme Mantığı
-  const normalize = (str) => str ? str.toLowerCase().replace(/[^a-z0-9]/g, '') : ''
-  const cleanText = normalize(text)
-  const cleanApiBrand = normalize(brandToMatch)
-
-  const match = brands.value.find(b => {
-    const brandName = normalize(b.name)
-    // Ya OCR metninde geçmeli, ya da API'den gelen marka ismiyle birebir eşleşmeli
-    return (cleanText && cleanText.includes(brandName)) || 
-           (cleanApiBrand && cleanApiBrand.includes(brandName)) ||
-           (barcode && b.barcode === barcode)
-  })
-  
-  if (match) {
-    console.log('✅ Eşleşme Bulundu:', match.name)
-    const filteredAlternatives = match.alternatives.filter(alt => 
-      alt.in.includes(detectedMarketId.value) || alt.in.includes('GENEL')
-    )
-
-    detectedBrand.value = {
-      ...match,
-      displayAlternatives: filteredAlternatives
-    }
-    
-    triggerVibration(match.status)
-  } else if (brandToMatch || text) {
-    debugLog.value = `Marka boykot listesinde değil: ${brandToMatch || text}`
-  }
-
-  isCheckingBrand.value = false
-}
-
-const triggerVibration = (status) => {
-  if ('vibrate' in navigator) {
-    if (status === 'boykot') {
-      navigator.vibrate([200, 100, 200])
+const lookupBarcode = async (barcode) => {
+  debugLog.value = `Sorgulanıyor: ${barcode}`
+  try {
+    const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`)
+    const data = await res.json()
+    if (data.status === 1 && data.product?.brands) {
+      const productBrand = data.product.brands.split(',')[0].trim()
+      debugLog.value = `Ürün: ${productBrand}`
+      const normalize = (s) => s.toLowerCase().trim().replace(/[^a-z0-9]/g, '')
+      const productBrandClean = normalize(productBrand)
+      const match = brands.value.find(b => {
+        const bName = normalize(b.name)
+        return productBrandClean.includes(bName) || bName.includes(productBrandClean)
+      })
+      if (match) showBrandResult(match)
     } else {
-      navigator.vibrate([100])
+      debugLog.value = 'Barkod bulunamadı.'
     }
-  }
+  } catch (e) { debugLog.value = 'API hatası.' }
 }
 
-const clearResult = () => {
-  detectedBrand.value = null
+const showBrandResult = (brand) => {
+  const filteredAlternatives = brand.alternatives?.filter(alt => alt.in.includes(detectedMarketId.value) || alt.in.includes('GENEL')) || []
+  detectedBrand.value = { ...brand, displayAlternatives: filteredAlternatives }
+  if ('vibrate' in navigator) navigator.vibrate(brand.status === 'boykot' ? [200, 100, 200] : [100])
 }
+
+const clearResult = () => { detectedBrand.value = null; debugLog.value = 'Tarama aktif.' }
 
 onBeforeUnmount(() => {
   if (animationFrameId) cancelAnimationFrame(animationFrameId)
-  if (stream) {
-    stream.getTracks().forEach(track => track.stop())
-  }
+  if (stream) stream.getTracks().forEach(t => t.stop())
 })
 </script>
 
 <style>
-.scan-line {
-  animation: scan 2.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-}
-
-@keyframes scan {
-  0% { transform: translateY(0); opacity: 0; }
-  10% { opacity: 1; }
-  90% { opacity: 1; }
-  100% { transform: translateY(280px); opacity: 0; }
-}
-
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s ease;
-}
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-
-.slide-up-enter-active,
-.slide-up-leave-active {
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.slide-up-enter-from,
-.slide-up-leave-to {
-  transform: translate(-50%, 100%) scale(0.95);
-  opacity: 0;
-}
+.scan-line { animation: scan 2.5s ease-in-out infinite; }
+@keyframes scan { 0% { transform: translateY(0); opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { transform: translateY(280px); opacity: 0; } }
+.slide-up-enter-active, .slide-up-leave-active { transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+.slide-up-enter-from, .slide-up-leave-to { transform: translate(-50%, 100%); opacity: 0; }
 </style>
