@@ -205,18 +205,44 @@ const initCamera = async () => {
   } catch (e) { errorMsg.value = 'Kamera açılamadı.' }
 }
 
+// === SCANNING LOOP ===
 const startProcessingLoop = () => {
   const loop = async (timestamp) => {
     if (isScannerReady.value && !detectedBrand.value && !isSearchOpen.value && !isProcessing.value && (timestamp - lastProcessTime > PROCESS_INTERVAL)) {
       lastProcessTime = timestamp
       if (videoElement.value?.readyState >= 2) {
         const result = await processFrame(videoElement.value)
-        if (result?.barcode) await lookupBarcode(result.barcode)
+        
+        // 1. Barkod bulunduysa
+        if (result?.barcode) {
+          await lookupBarcode(result.barcode)
+        } 
+        // 2. Sadece yazı bulunduysa (Logo Okuma)
+        else if (result?.text) {
+          debugLog.value = `Yazı okunuyor: ${result.text.substring(0, 15)}...`
+          matchBrandFromText(result.text)
+        }
       }
     }
     animationFrameId = requestAnimationFrame(loop)
   }
   animationFrameId = requestAnimationFrame(loop)
+}
+
+// === TEXT MATCHING (Logo/Brand Name) ===
+const matchBrandFromText = (text) => {
+  const normalize = (s) => s.toLowerCase().trim().replace(/[^a-z0-9]/g, '')
+  const cleanText = normalize(text)
+  
+  const match = brands.value.find(b => {
+    const bName = normalize(b.name)
+    // Yazının içinde marka ismi geçiyor mu? (Örn: "NESCAFE 3in1" -> "NESCAFE")
+    return cleanText.includes(bName) && bName.length > 2
+  })
+
+  if (match) {
+    showBrandResult(match)
+  }
 }
 
 const lookupBarcode = async (barcode) => {
