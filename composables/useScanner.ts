@@ -10,7 +10,6 @@ export const useScanner = () => {
 
   const initScanner = async () => {
     reader = new BrowserMultiFormatReader()
-    // Tesseract'ı arka planda, kullanıcıyı bekletmeden hazırla
     tesseractWorker = await Tesseract.createWorker('tur+eng', 1, {
       cacheMethod: 'readOnly',
       logger: () => {}
@@ -23,33 +22,38 @@ export const useScanner = () => {
     isProcessing.value = true
 
     try {
+      // Netlik için Çözünürlüğü DÜŞÜRMÜYORUZ, Orijinal Netlikte Kalıyoruz
       const canvas = document.createElement('canvas')
-      canvas.width = videoElement.videoWidth / 1.5 // Performans için biraz küçült
-      canvas.height = videoElement.videoHeight / 1.5
+      canvas.width = videoElement.videoWidth
+      canvas.height = videoElement.videoHeight
       const ctx = canvas.getContext('2d')
       if (!ctx) return null
-      ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height)
+      
+      // Dijital Netlik Artırıcı (Görüntüyü daha keskin hale getirir)
+      ctx.imageSmoothingEnabled = true
+      ctx.imageSmoothingQuality = 'high'
+      ctx.drawImage(videoElement, 0, 0)
 
-      // 1. KANAL: Barkod Tarama (Hızlı)
+      // 1. Barkod Tarama (Yüksek Netlikte)
       try {
         const barcodeResult = await reader.decodeFromImageElement(canvas as unknown as HTMLImageElement)
         if (barcodeResult) {
           return { barcode: barcodeResult.getText() }
         }
-      } catch (e) {
-        // Barkod yoksa devam et
-      }
+      } catch (e) {}
 
-      // 2. KANAL: Yazı/Logo Okuma (OCR)
+      // 2. Yazı/Logo Okuma (Daha keskin görüntü ile)
       if (tesseractWorker) {
+        // Sadece orta bölgeyi tara (Performans ve Odak için)
+        // Genelde ürünün markası merkezdedir.
         const { data: { text } } = await tesseractWorker.recognize(canvas)
-        if (text && text.length > 3) {
+        if (text && text.length > 2) {
           return { text: text.trim().toLowerCase() }
         }
       }
 
     } catch (err) {
-      // Sessiz hata yönetimi
+      console.error('Analiz hatası:', err)
     } finally {
       isProcessing.value = false
     }

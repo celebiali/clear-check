@@ -193,16 +193,45 @@ const selectFromSearch = (brand) => {
 }
 
 const initCamera = async () => {
+  errorMsg.value = ''
+  debugLog.value = 'Kamera optimize ediliyor...'
   try {
-    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+    // Profesyonel Seviye Kamera Ayarları
+    const constraints = {
+      video: { 
+        facingMode: 'environment',
+        width: { min: 1280, ideal: 1920, max: 2560 },
+        height: { min: 720, ideal: 1080, max: 1440 },
+        // Bazı cihazlarda odaklanmayı tetikler
+        focusMode: 'continuous',
+        advanced: [{ focusMode: 'continuous' } as any]
+      }
+    }
+    
+    stream = await navigator.mediaDevices.getUserMedia(constraints)
+    
     if (videoElement.value) {
       videoElement.value.srcObject = stream
       videoElement.value.onloadedmetadata = () => {
         videoElement.value.play()
+        debugLog.value = 'HD Kamera Aktif. Odaklanma sağlandı.'
         startProcessingLoop()
       }
     }
-  } catch (e) { errorMsg.value = 'Kamera açılamadı.' }
+  } catch (e) {
+    console.warn('Yüksek çözünürlük açılamadı, standart moda geçiliyor...')
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+      if (videoElement.value) {
+        videoElement.value.srcObject = stream
+        videoElement.value.play()
+        startProcessingLoop()
+      }
+    } catch (e2) {
+      errorMsg.value = 'Kamera açılamadı.'
+      debugLog.value = 'Hata: ' + e2.message
+    }
+  }
 }
 
 // === SCANNING LOOP ===
