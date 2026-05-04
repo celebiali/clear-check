@@ -243,7 +243,7 @@ const initCamera = async () => {
 }
 
 let lastProcessTime = 0
-const PROCESS_INTERVAL = 400 // Biraz daha hızlandıralım
+const PROCESS_INTERVAL = 300 // Hızlı tarama
 
 const startProcessingLoop = () => {
   const loop = async (timestamp) => {
@@ -254,7 +254,8 @@ const startProcessingLoop = () => {
     ) {
       lastProcessTime = timestamp
       
-      if (videoElement.value) {
+      if (videoElement.value && videoElement.value.readyState >= 2) {
+        debugLog.value = 'Ürün veya barkod aranıyor...'
         const scanResult = await processFrame(videoElement.value)
         if (scanResult) {
           checkBrandStatus(scanResult)

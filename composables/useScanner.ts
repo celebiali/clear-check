@@ -1,12 +1,13 @@
 import { ref } from 'vue'
 import Tesseract from 'tesseract.js'
+import { BrowserMultiFormatReader } from '@zxing/library'
 
 export const useScanner = () => {
-  const isReady = ref(true) // Artık her zaman hazır başlıyoruz
+  const isReady = ref(true)
   const isProcessing = ref(false)
+  const codeReader = new BrowserMultiFormatReader()
   let tesseractWorker: Tesseract.Worker | null = null
 
-  // Tesseract'ı sadece ihtiyaç anında ve arka planda yükle
   const initOCR = async () => {
     if (tesseractWorker) return tesseractWorker
     tesseractWorker = await Tesseract.createWorker('tur+eng', 1, {
@@ -22,39 +23,33 @@ export const useScanner = () => {
     isProcessing.value = true
 
     try {
-      // 1. ADIM: NATIVE BARKOD (Hemen çalışır, 0ms bekleme)
-      let detectedBarcode = ''
-      if ('BarcodeDetector' in window) {
-        // @ts-ignore
-        const barcodeDetector = new window.BarcodeDetector({ formats: ['ean_13', 'ean_8', 'qr_code'] })
-        const barcodes = await barcodeDetector.detect(videoElement)
-        if (barcodes.length > 0) {
-          detectedBarcode = barcodes[0].rawValue
-          // Barkod bulursak hemen dön, OCR ile vakit kaybetme
-          return { barcode: detectedBarcode }
+      // 1. ADIM: Güçlendirilmiş Barkod Tarama (Zxing - iPhone/Android uyumlu)
+      try {
+        const result = await codeReader.decodeFromVideoElement(videoElement)
+        if (result) {
+          const barcode = result.getText()
+          return { barcode }
         }
+      } catch (e) {
+        // Barkod bulunamadıysa devam et
       }
 
-      // 2. ADIM: OCR (Sadece barkod yoksa ve arka planda hazırsa çalışır)
-      // Bu kısım artık ana açılışı engellemiyor.
+      // 2. ADIM: OCR (Metin Okuma)
       const canvas = document.createElement('canvas')
-      canvas.width = videoElement.videoWidth / 2 // Hız için çözünürlüğü düşür
-      canvas.height = videoElement.videoHeight / 2
+      canvas.width = videoElement.videoWidth
+      canvas.height = videoElement.videoHeight
       const ctx = canvas.getContext('2d')
       if (ctx) {
         ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height)
-        
-        // OCR worker'ını sadece gerekliyse ve arka planda başlat
         const worker = await initOCR()
         const { data: { text } } = await worker.recognize(canvas)
         
         return {
           text: text.trim().toLowerCase(),
-          barcode: detectedBarcode
         }
       }
     } catch (err) {
-      console.warn('Tarama işlemi atlandı (Modeller yükleniyor olabilir).')
+      // Sessiz hata yönetimi
     } finally {
       isProcessing.value = false
     }
@@ -63,7 +58,7 @@ export const useScanner = () => {
   }
 
   return {
-    initScanner: () => Promise.resolve(), // Geriye dönük uyumluluk için boş bıraktık
+    initScanner: () => Promise.resolve(),
     processFrame,
     isReady,
     isProcessing
