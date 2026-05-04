@@ -138,7 +138,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 const videoElement = ref(null)
 const searchInputRef = ref(null)
 const errorMsg = ref('')
