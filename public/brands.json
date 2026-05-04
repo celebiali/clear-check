@@ -1,0 +1,14 @@
+[
+  {
+    "name": "Doritos",
+    "status": "boykot",
+    "reason": "Şirket politikaları nedeniyle",
+    "alternative": "Patos"
+  },
+  {
+    "name": "Coca Cola",
+    "status": "boykot",
+    "reason": "Yatırım kararları nedeniyle",
+    "alternative": "Uludağ"
+  }
+]

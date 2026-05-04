@@ -1,0 +1,22 @@
+{
+  "name": "clearcheck",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {
+    "@nuxt/ui": "^2.15.0",
+    "@tensorflow-models/coco-ssd": "^2.2.3",
+    "@tensorflow/tfjs": "^4.17.0",
+    "@vite-pwa/nuxt": "^0.6.0",
+    "nuxt": "^3.11.0",
+    "tesseract.js": "^5.0.5",
+    "vue": "^3.4.21",
+    "vue-router": "^4.3.0"
+  }
+}
