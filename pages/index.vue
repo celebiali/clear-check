@@ -20,11 +20,61 @@
     <!-- Scanner Overlay (Target Frame) -->
     <div class="z-10 pointer-events-none relative w-full h-full flex flex-col items-center justify-center p-4">
       
-      <!-- Top Instruction -->
-      <div class="absolute top-12 left-1/2 -translate-x-1/2 text-white text-base md:text-lg font-bold bg-white/10 px-8 py-4 rounded-3xl shadow-[0_8px_32px_0_rgba(31,38,135,0.37)] backdrop-blur-lg border border-white/20 whitespace-nowrap tracking-wide uppercase flex items-center gap-3">
-        <UIcon name="i-heroicons-magnifying-glass" class="w-5 h-5 text-green-400" />
-        Akıllı Analiz Aktif
+    <!-- Top Action Bar -->
+    <div class="absolute top-8 left-0 w-full z-20 px-6 flex justify-between items-center pointer-events-none">
+      <div class="bg-white/10 backdrop-blur-xl px-5 py-2 rounded-2xl border border-white/20 text-white text-[10px] font-black tracking-widest uppercase pointer-events-auto shadow-xl">
+        ClearCheck <span class="text-green-400 ml-1">Pro</span>
       </div>
+      
+      <button 
+        @click="isSearchOpen = true" 
+        class="w-12 h-12 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 text-white flex items-center justify-center pointer-events-auto hover:bg-white/20 transition-all shadow-xl"
+      >
+        <UIcon name="i-heroicons-magnifying-glass" class="w-6 h-6" />
+      </button>
+    </div>
+
+    <!-- Search Overlay -->
+    <Transition name="fade">
+      <div v-if="isSearchOpen" class="fixed inset-0 z-[60] bg-gray-950/95 backdrop-blur-3xl p-6">
+        <div class="max-w-md mx-auto h-full flex flex-col pt-12">
+          <div class="flex items-center gap-4 mb-8">
+            <UInput
+              v-model="searchQuery"
+              placeholder="Marka ismi yazın..."
+              size="xl"
+              class="flex-1"
+              variant="none"
+              autocomplete="off"
+              :ui="{ base: 'bg-white/10 text-white text-lg font-bold placeholder-white/30 h-16 px-6 rounded-3xl border border-white/10 focus:border-green-400/50 transition-all' }"
+            />
+            <UButton color="white" variant="ghost" size="xl" class="rounded-2xl" @click="isSearchOpen = false">Kapat</UButton>
+          </div>
+
+          <div v-if="searchResults.length > 0" class="space-y-4">
+            <h4 class="text-xs font-black text-gray-500 uppercase tracking-widest mb-4">Önerilen Markalar</h4>
+            <div 
+              v-for="brand in searchResults" 
+              :key="brand.name"
+              @click="selectFromSearch(brand)"
+              class="bg-white/5 hover:bg-white/10 p-6 rounded-[2rem] border border-white/10 flex items-center justify-between cursor-pointer transition-all"
+            >
+              <div class="flex items-center gap-4">
+                <div class="w-10 h-10 rounded-full flex items-center justify-center" :class="brand.status === 'boykot' ? 'bg-red-500/20 text-red-500' : 'bg-green-500/20 text-green-500'">
+                  <UIcon :name="brand.status === 'boykot' ? 'i-heroicons-x-circle' : 'i-heroicons-check-circle'" class="w-6 h-6" />
+                </div>
+                <span class="text-white text-xl font-bold">{{ brand.name }}</span>
+              </div>
+              <UIcon name="i-heroicons-chevron-right" class="text-white/20" />
+            </div>
+          </div>
+          
+          <div v-else-if="searchQuery" class="text-center py-12">
+            <p class="text-white/40">Sonuç bulunamadı.</p>
+          </div>
+        </div>
+      </div>
+    </Transition>
       
       <!-- Frame -->
       <div class="w-80 h-80 border-2 border-white/20 rounded-[3rem] relative shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden bg-white/5 backdrop-blur-[2px]">
@@ -123,24 +173,46 @@ const videoElement = ref(null)
 const errorMsg = ref('')
 const detectedBrand = ref(null)
 const brands = ref([])
+const searchQuery = ref('')
+const isSearchOpen = ref(false)
 
-let stream = null
-let animationFrameId = null
-
-const { initScanner, processFrame, isReady: isScannerReady, isProcessing } = useScanner()
 const { detectedMarketId } = useMarketContext()
 
 onMounted(async () => {
+  // 1. Önce Lokal Hafızadan Yükle (Offline Desteği)
+  const cachedBrands = localStorage.getItem('clearcheck_brands')
+  if (cachedBrands) {
+    brands.value = JSON.parse(cachedBrands)
+  }
+
+  // 2. Canlı API üzerinden verileri tazele
   try {
     const res = await fetch('/api/brands')
-    brands.value = await res.json()
+    const freshData = await res.json()
+    if (freshData && freshData.length > 0) {
+      brands.value = freshData
+      localStorage.setItem('clearcheck_brands', JSON.stringify(freshData))
+    }
   } catch (err) {
-    console.error('Veri çekilemedi.', err)
+    console.warn('Canlı veri çekilemedi, çevrimdışı modda devam ediliyor.')
   }
 
   await initScanner()
   await initCamera()
 })
+
+// Akıllı Arama Filtrelemesi
+const searchResults = computed(() => {
+  if (!searchQuery.value) return []
+  const query = searchQuery.value.toLowerCase()
+  return brands.value.filter(b => b.name.toLowerCase().includes(query)).slice(0, 5)
+})
+
+const selectFromSearch = (brand) => {
+  checkBrandStatus({ text: brand.name.toLowerCase() })
+  isSearchOpen.value = false
+  searchQuery.value = ''
+}
 
 const initCamera = async () => {
   errorMsg.value = ''
@@ -239,6 +311,15 @@ onBeforeUnmount(() => {
   10% { opacity: 1; }
   90% { opacity: 1; }
   100% { transform: translateY(280px); opacity: 0; }
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 
 .slide-up-enter-active,
