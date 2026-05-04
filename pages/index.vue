@@ -13,14 +13,14 @@
     <div class="z-10 pointer-events-none relative w-full h-full flex flex-col items-center justify-center p-4">
       
     <!-- Top Action Bar -->
-    <div class="absolute top-8 left-0 w-full z-20 px-6 flex justify-between items-center pointer-events-none">
+    <div class="absolute top-8 left-0 w-full z-[70] px-6 flex justify-between items-center pointer-events-none">
       <div class="bg-white/10 backdrop-blur-xl px-5 py-2 rounded-2xl border border-white/20 text-white text-[10px] font-black tracking-widest uppercase pointer-events-auto shadow-xl">
         ClearCheck <span class="text-green-400 ml-1">Pro</span>
       </div>
       
       <button 
         @click="isSearchOpen = true" 
-        class="w-12 h-12 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 text-white flex items-center justify-center pointer-events-auto hover:bg-white/20 transition-all shadow-xl"
+        class="w-12 h-12 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 text-white flex items-center justify-center pointer-events-auto active:scale-95 transition-all shadow-xl"
       >
         <UIcon name="i-heroicons-magnifying-glass" class="w-6 h-6" />
       </button>
@@ -28,19 +28,19 @@
 
     <!-- Search Overlay -->
     <Transition name="fade">
-      <div v-if="isSearchOpen" class="fixed inset-0 z-[60] bg-gray-950/95 backdrop-blur-3xl p-6">
+      <div v-if="isSearchOpen" class="fixed inset-0 z-[100] bg-gray-950/98 backdrop-blur-3xl p-6 overflow-y-auto">
         <div class="max-w-md mx-auto h-full flex flex-col pt-12">
           <div class="flex items-center gap-4 mb-8">
             <UInput
               v-model="searchQuery"
               placeholder="Marka ismi yazın..."
               size="xl"
-              class="flex-1"
+              class="flex-1 search-input"
               variant="none"
               autocomplete="off"
-              :ui="{ base: 'bg-white/10 text-white text-lg font-bold placeholder-white/30 h-16 px-6 rounded-3xl border border-white/10 focus:border-green-400/50 transition-all' }"
+              :ui="{ base: 'bg-white/10 text-white text-lg font-bold placeholder-white/30 h-16 px-6 rounded-3xl border border-white/10 focus:border-green-400/50 transition-all pointer-events-auto' }"
             />
-            <UButton color="white" variant="ghost" size="xl" class="rounded-2xl" @click="isSearchOpen = false">Kapat</UButton>
+            <UButton color="white" variant="ghost" size="xl" class="rounded-2xl shrink-0" @click="isSearchOpen = false">Kapat</UButton>
           </div>
 
           <div v-if="searchResults.length > 0" class="space-y-4">
@@ -193,11 +193,16 @@ onMounted(async () => {
   await initCamera()
 })
 
-// Akıllı Arama Filtrelemesi
-const searchResults = computed(() => {
-  if (!searchQuery.value) return []
-  const query = searchQuery.value.toLowerCase()
-  return brands.value.filter(b => b.name.toLowerCase().includes(query)).slice(0, 5)
+const searchInput = ref(null)
+
+// Arama açıldığında klavyeyi otomatik aç
+watch(isSearchOpen, (newVal) => {
+  if (newVal) {
+    nextTick(() => {
+      const input = document.querySelector('.search-input input')
+      if (input) input.focus()
+    })
+  }
 })
 
 const selectFromSearch = (brand) => {
@@ -209,9 +214,14 @@ const selectFromSearch = (brand) => {
 const initCamera = async () => {
   errorMsg.value = ''
   try {
-    stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
-    })
+    const constraints = {
+      video: { 
+        facingMode: 'environment', 
+        width: { ideal: 1280 }, 
+        height: { ideal: 720 } 
+      }
+    }
+    stream = await navigator.mediaDevices.getUserMedia(constraints)
     if (videoElement.value) {
       videoElement.value.srcObject = stream
       videoElement.value.onloadedmetadata = () => {
@@ -226,13 +236,13 @@ const initCamera = async () => {
 }
 
 let lastProcessTime = 0
-const PROCESS_INTERVAL = 500 
+const PROCESS_INTERVAL = 400 // Biraz daha hızlandıralım
 
 const startProcessingLoop = () => {
   const loop = async (timestamp) => {
     if (
-      isScannerReady.value && 
       !detectedBrand.value && 
+      !isSearchOpen.value &&
       (timestamp - lastProcessTime > PROCESS_INTERVAL)
     ) {
       lastProcessTime = timestamp
