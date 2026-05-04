@@ -16,11 +16,8 @@
       </div>
     </div>
 
-    <!-- Scanner Overlay (Target Frame) -->
-    <div class="z-10 pointer-events-none relative w-full h-full flex flex-col items-center justify-center p-4">
-      
     <!-- Top Action Bar -->
-    <div class="absolute top-8 left-0 w-full z-[70] px-6 flex justify-between items-center pointer-events-none">
+    <div class="absolute top-8 left-0 w-full z-[100] px-6 flex justify-between items-center pointer-events-none">
       <div class="bg-white/10 backdrop-blur-xl px-5 py-2 rounded-2xl border border-white/20 text-white text-[10px] font-black tracking-widest uppercase pointer-events-auto shadow-xl">
         ClearCheck <span class="text-green-400 ml-1">Pro</span>
       </div>
@@ -35,7 +32,7 @@
 
     <!-- Search Overlay -->
     <Transition name="fade">
-      <div v-if="isSearchOpen" class="fixed inset-0 z-[100] bg-gray-950/98 backdrop-blur-3xl p-6 overflow-y-auto">
+      <div v-if="isSearchOpen" class="fixed inset-0 z-[110] bg-gray-950/98 backdrop-blur-3xl p-6 overflow-y-auto">
         <div class="max-w-md mx-auto h-full flex flex-col pt-12">
           <div class="flex items-center gap-4 mb-8">
             <UInput
@@ -74,7 +71,9 @@
         </div>
       </div>
     </Transition>
-      
+
+    <!-- Scanner Overlay (Target Frame) -->
+    <div class="z-10 pointer-events-none absolute inset-0 flex flex-col items-center justify-center p-4">
       <!-- Frame -->
       <div class="w-80 h-80 border-2 border-white/20 rounded-[3rem] relative shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden bg-white/5 backdrop-blur-[2px]">
         <!-- Scanning animation line -->
@@ -220,24 +219,36 @@ const selectFromSearch = (brand) => {
 
 const initCamera = async () => {
   errorMsg.value = ''
+  debugLog.value = 'Kamera başlatılıyor...'
   try {
+    // Önce en iyi ayarları dene
     const constraints = {
       video: { 
-        facingMode: 'environment', 
-        width: { ideal: 1280 }, 
-        height: { ideal: 720 } 
+        facingMode: 'environment',
+        width: { ideal: 1280 },
+        height: { ideal: 720 }
       }
     }
-    stream = await navigator.mediaDevices.getUserMedia(constraints)
+    
+    try {
+      stream = await navigator.mediaDevices.getUserMedia(constraints)
+    } catch (e) {
+      console.warn('Yüksek çözünürlük başarısız, temel moda geçiliyor...')
+      // Başarısız olursa en basit ayarla dene
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+    }
+
     if (videoElement.value) {
       videoElement.value.srcObject = stream
       videoElement.value.onloadedmetadata = () => {
         videoElement.value.play()
+        debugLog.value = 'Kamera aktif. Tarama bekleniyor...'
         startProcessingLoop()
       }
     }
   } catch (err) {
     errorMsg.value = 'Kamera erişimi engellendi.'
+    debugLog.value = `Kamera Hatası: ${err.message}`
     console.error('Camera error:', err)
   }
 }
